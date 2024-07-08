@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Containers and Swarm Nodes Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-top: 20px;
+            margin-right: 10px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Docker Containers Status</h1>
+    <div class="container">
+        <button onclick="fetchContainers()">Refresh Containers</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Image</th>
+                    <th>Status</th>
+                    <th>Ports</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody id="container-table-body">
+                <!-- Rows will be populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <h1>Swarm Nodes Status</h1>
+    <div class="container">
+        <button onclick="fetchNodes()">Refresh Nodes</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Hostname</th>
+                    <th>Status</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+            <tbody id="node-table-body">
+                <!-- Rows will be populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        async function fetchContainers() {
+            const response = await fetch('/api/containers');
+            const containers = await response.json();
+
+            const tableBody = document.getElementById('container-table-body');
+            tableBody.innerHTML = '';
+
+            containers.forEach(container => {
+                const row = document.createElement('tr');
+
+                const idCell = document.createElement('td');
+                idCell.textContent = container.ID;
+                row.appendChild(idCell);
+
+                const nameCell = document.createElement('td');
+                nameCell.textContent = container.Name;
+                row.appendChild(nameCell);
+
+                const imageCell = document.createElement('td');
+                imageCell.textContent = container.Image;
+                row.appendChild(imageCell);
+
+                const statusCell = document.createElement('td');
+                statusCell.textContent = container.Status;
+                row.appendChild(statusCell);
+
+                const portsCell = document.createElement('td');
+                portsCell.textContent = container.Ports;
+                row.appendChild(portsCell);
+
+                const createdCell = document.createElement('td');
+                createdCell.textContent = container.Created;
+                row.appendChild(createdCell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        async function fetchNodes() {
+            const response = await fetch('/api/nodes');
+            const nodes = await response.json();
+
+            const tableBody = document.getElementById('node-table-body');
+            tableBody.innerHTML = '';
+
+            nodes.forEach(node => {
+                const row = document.createElement('tr');
+
+                const idCell = document.createElement('td');
+                idCell.textContent = node.ID;
+                row.appendChild(idCell);
+
+                const hostnameCell = document.createElement('td');
+                hostnameCell.textContent = node.Hostname;
+                row.appendChild(hostnameCell);
+
+                const statusCell = document.createElement('td');
+                statusCell.textContent = node.Status;
+                row.appendChild(statusCell);
+
+                const roleCell = document.createElement('td');
+                roleCell.textContent = node.Role;
+                row.appendChild(roleCell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        window.onload = function() {
+            fetchContainers();
+            fetchNodes();
+        };
+    </script>
+</body>
+</html>
