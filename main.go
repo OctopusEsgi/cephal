@@ -4,6 +4,7 @@ import (
 	"cephal/api/containers"
 	"cephal/api/nodes"
 	"cephal/api/services"
+	"cephal/api/createserver"
 	"fmt"
 	"html/template"
 	"log"
@@ -25,6 +26,7 @@ func frontHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	createserver.CreateServer()
 	http.HandleFunc("/api/containers", containers.ContainersapiHandler)
 	http.HandleFunc("/api/nodes", nodes.NodesAPIHandler)
 	http.HandleFunc("/api/services", services.ServicesAPIHandler)
