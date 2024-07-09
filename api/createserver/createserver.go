@@ -15,10 +15,13 @@ import (
 
 // Paramètre nécessaire pour créer un conteneur
 type ServerInfo struct {
-	Game string   `json:"game"` // IMAGE
-	Env  []string `json:"env"`  // ENV
-	Ram  int      `json:"ram"`  // RAM
-	CPU  int      `json:"cpu"`  // CPU
+	Game    string   `json:"game"`    // IMAGE
+	Alias   string   `json:"alias"`   // Alias pour debug
+	Env     []string `json:"env"`     // ENV
+	Ram     int      `json:"ram"`     // RAM
+	CPU     int      `json:"cpu"`     // CPU
+	PortTCP string   `json:"portTCP"` // Port TCP
+	PortUDP string   `json:"portUDP"` // Port UDP
 }
 
 type ContainerInfo struct {
@@ -33,16 +36,14 @@ type ContainerInfo struct {
 func createServer(srvInfo ServerInfo) error {
 	fmt.Println("reçu:", srvInfo)
 
-	// Configure les ports TCP et UDP
-	portTCP := "6567"
-	portUDP := "6567"
-	newPortTCP, err := nat.NewPort("tcp", portTCP)
+	// Utiliser les ports TCP et UDP spécifiés dans srvInfo
+	newPortTCP, err := nat.NewPort("tcp", srvInfo.PortTCP)
 	if err != nil {
-		return nil
+		return err
 	}
-	newPortUDP, err := nat.NewPort("udp", portUDP)
+	newPortUDP, err := nat.NewPort("udp", srvInfo.PortUDP)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// Configure HostConfig
@@ -51,13 +52,13 @@ func createServer(srvInfo ServerInfo) error {
 			newPortTCP: []nat.PortBinding{
 				{
 					HostIP:   "0.0.0.0",
-					HostPort: portTCP,
+					HostPort: srvInfo.PortTCP,
 				},
 			},
 			newPortUDP: []nat.PortBinding{
 				{
 					HostIP:   "0.0.0.0",
-					HostPort: portUDP,
+					HostPort: srvInfo.PortUDP,
 				},
 			},
 		},
@@ -74,7 +75,7 @@ func createServer(srvInfo ServerInfo) error {
 		},
 	}
 
-	// Configure NetworkingConfig
+	// Configure NetworkingConfig -- :angry:
 	networkConfig := &network.NetworkingConfig{
 		EndpointsConfig: map[string]*network.EndpointSettings{},
 	}
@@ -94,7 +95,7 @@ func createServer(srvInfo ServerInfo) error {
 		Image:        srvInfo.Game,
 		Env:          srvInfo.Env,
 		ExposedPorts: exposedPorts,
-		Hostname:     fmt.Sprintf("%s-hostnameexample", srvInfo.Game),
+		Hostname:     fmt.Sprintf("%s-%s", srvInfo.Game, srvInfo.Alias),
 	}
 
 	// Créer le client Docker
@@ -106,11 +107,11 @@ func createServer(srvInfo ServerInfo) error {
 	// Créer le conteneur
 	ctn, err := cli.ContainerCreate(
 		context.Background(),
-		config,
-		hostConfig,
-		networkConfig,
-		nil,
-		"TEST",
+		config,        // Config du container
+		hostConfig,    // Config de l'hôte
+		networkConfig, // Config réseau
+		nil,           // PLatforme ?? -- semble pas utile pour l'instant
+		fmt.Sprintf("%s-%s", srvInfo.Game, srvInfo.Alias), // Nom du conteneurs
 	)
 	if err != nil {
 		return err

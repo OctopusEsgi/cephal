@@ -27,7 +27,6 @@ func getNodes() ([]NodeInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	var nodeInfos []NodeInfo
 	for _, node := range nodes {
 		nodeInfos = append(nodeInfos, NodeInfo{
