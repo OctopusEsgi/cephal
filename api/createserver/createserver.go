@@ -15,10 +15,10 @@ import (
 
 // Paramètre nécessaire pour créer un conteneur
 type ServerInfo struct {
-	Game string `json:"game"` // IMAGE
-	Env  string `json:"env"`  // ENV
-	Ram  int    `json:"ram"`  // RAM
-	CPU  int    `json:"cpu"`  // CPU
+	Game string   `json:"game"` // IMAGE
+	Env  []string `json:"env"`  // ENV
+	Ram  int      `json:"ram"`  // RAM
+	CPU  int      `json:"cpu"`  // CPU
 }
 
 type ContainerInfo struct {
@@ -34,8 +34,8 @@ func createServer(srvInfo ServerInfo) error {
 	fmt.Println("reçu:", srvInfo)
 
 	// Configure les ports TCP et UDP
-	portTCP := "5012"
-	portUDP := "5012"
+	portTCP := "6567"
+	portUDP := "6567"
 	newPortTCP, err := nat.NewPort("tcp", portTCP)
 	if err != nil {
 		return nil
@@ -92,7 +92,7 @@ func createServer(srvInfo ServerInfo) error {
 	// Configure le conteneur
 	config := &container.Config{
 		Image:        srvInfo.Game,
-		Env:          []string{srvInfo.Env},
+		Env:          srvInfo.Env,
 		ExposedPorts: exposedPorts,
 		Hostname:     fmt.Sprintf("%s-hostnameexample", srvInfo.Game),
 	}
