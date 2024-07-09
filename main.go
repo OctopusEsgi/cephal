@@ -2,9 +2,9 @@ package main
 
 import (
 	"cephal/api/containers"
+	"cephal/api/createserver"
 	"cephal/api/nodes"
 	"cephal/api/services"
-	"cephal/api/createserver"
 	"fmt"
 	"html/template"
 	"log"
@@ -26,10 +26,10 @@ func frontHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	createserver.CreateServer()
 	http.HandleFunc("/api/containers", containers.ContainersapiHandler)
 	http.HandleFunc("/api/nodes", nodes.NodesAPIHandler)
 	http.HandleFunc("/api/services", services.ServicesAPIHandler)
+	http.HandleFunc("/api/createserver", createserver.CreateServerAPIHandler)
 	http.HandleFunc("/", frontHandler)
 	fmt.Println("Server is running on http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
