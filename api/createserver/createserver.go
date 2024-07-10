@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 )
@@ -36,26 +35,32 @@ type ContainerInfo struct {
 func createServer(srvInfo ServerInfo) error {
 	fmt.Println("reçu:", srvInfo)
 
-	// Utiliser les ports TCP et UDP spécifiés dans srvInfo
-	newPortTCP, err := nat.NewPort("tcp", srvInfo.PortTCP)
+	// Ports Docker internes doivent être 6567
+	internalPortTCP, err := nat.NewPort("tcp", "6567")
 	if err != nil {
 		return err
 	}
-	newPortUDP, err := nat.NewPort("udp", srvInfo.PortUDP)
+	internalPortUDP, err := nat.NewPort("udp", "6567")
 	if err != nil {
 		return err
 	}
 
-	// Configure HostConfig
+	// Configure les ports à exposer dans le conteneur
+	exposedPorts := nat.PortSet{
+		internalPortTCP: struct{}{},
+		internalPortUDP: struct{}{},
+	}
+
+	// Configure HostConfig pour mapper les ports externes vers les ports internes
 	hostConfig := &container.HostConfig{
 		PortBindings: nat.PortMap{
-			newPortTCP: []nat.PortBinding{
+			internalPortTCP: []nat.PortBinding{
 				{
 					HostIP:   "0.0.0.0",
 					HostPort: srvInfo.PortTCP,
 				},
 			},
-			newPortUDP: []nat.PortBinding{
+			internalPortUDP: []nat.PortBinding{
 				{
 					HostIP:   "0.0.0.0",
 					HostPort: srvInfo.PortUDP,
@@ -65,29 +70,10 @@ func createServer(srvInfo ServerInfo) error {
 		RestartPolicy: container.RestartPolicy{
 			Name: "always",
 		},
-		LogConfig: container.LogConfig{
-			Type:   "json-file",
-			Config: map[string]string{},
-		},
 		Resources: container.Resources{
 			Memory:   int64(srvInfo.Ram) * 1024 * 1024, // Convertir MB en bytes
 			NanoCPUs: int64(srvInfo.CPU) * 1e9,         // Convertir CPU en nanosecondes
 		},
-	}
-
-	// Configure NetworkingConfig -- :angry:
-	networkConfig := &network.NetworkingConfig{
-		EndpointsConfig: map[string]*network.EndpointSettings{},
-	}
-	gatewayConfig := &network.EndpointSettings{
-		Gateway: "gatewayname",
-	}
-	networkConfig.EndpointsConfig["bridge"] = gatewayConfig
-
-	// Configure les ports à exposer
-	exposedPorts := map[nat.Port]struct{}{
-		newPortTCP: {},
-		newPortUDP: {},
 	}
 
 	// Configure le conteneur
@@ -107,11 +93,11 @@ func createServer(srvInfo ServerInfo) error {
 	// Créer le conteneur
 	ctn, err := cli.ContainerCreate(
 		context.Background(),
-		config,        // Config du container
-		hostConfig,    // Config de l'hôte
-		networkConfig, // Config réseau
-		nil,           // PLatforme ?? -- semble pas utile pour l'instant
-		fmt.Sprintf("%s-%s", srvInfo.Game, srvInfo.Alias), // Nom du conteneurs
+		config,     // Config du conteneur
+		hostConfig, // Config de l'hôte
+		nil,        // NetworkingConfig
+		nil,        // Platform -- Pas utile pour l'instant ??
+		fmt.Sprintf("%s-%s", srvInfo.Game, srvInfo.Alias), // Nom du conteneur
 	)
 	if err != nil {
 		return err
@@ -144,4 +130,5 @@ func CreateServerAPIHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 }
