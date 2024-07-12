@@ -1,99 +1,95 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Docker Containers and Swarm Nodes Status</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-        }
-        h1 {
-            background-color: #333;
-            color: white;
-            padding: 10px 20px;
-            margin: 0;
-            text-align: center;
-        }
-        .container {
-            padding: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background-color: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        th, td {
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-        th {
-            background-color: #f4f4f4;
-            font-weight: bold;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        button {
-            display: inline-block;
-            padding: 10px 20px;
-            margin-top: 20px;
-            margin-right: 10px;
-            border: none;
-            background-color: #007BFF;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+    <title>Page Admin Octopus</title>
+    <link rel="stylesheet" href="/front/styles.css">
 </head>
 <body>
-    <h1>Docker Containers Status</h1>
-    <div class="container">
-        <button onclick="fetchContainers()">Refresh Containers</button>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Image</th>
-                    <th>Status</th>
-                    <th>Ports</th>
-                    <th>Created</th>
-                </tr>
-            </thead>
-            <tbody id="container-table-body">
-                <!-- Rows will be populated by JavaScript -->
-            </tbody>
-        </table>
-    </div>
+    <h1>Page Admin Octopus - ESGI</h1>
+    <div class="wrapper">
+        <div class="left-pane">
+            <h2>Démarrer un serveur de jeu</h2>
+            <form id="game-form">
+                <label for="server">Image :</label>
+                <select id="server" name="server" required>
+                    <option value="mindustryesgi">mindustryesgi</option>
+                </select>
 
-    <h1>Swarm Nodes Status</h1>
-    <div class="container">
-        <button onclick="fetchNodes()">Refresh Nodes</button>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Hostname</th>
-                    <th>Status</th>
-                    <th>Role</th>
-                </tr>
-            </thead>
-            <tbody id="node-table-body">
-                <!-- Rows will be populated by JavaScript -->
-            </tbody>
-        </table>
+                <label for="alias">Alias :</label>
+                <input type="text" id="alias" name="alias" required>
+                
+                <label for="map">Carte :</label>
+                <select id="map" name="map" required>
+                    <option value="Tendrils">Tendrils</option>
+                    <option value="Glacier">Glacier</option>
+                </select>
+                
+                <label for="mode">Mode de Jeu :</label>
+                <select id="mode" name="mode" required>
+                    <option value="pvp">PvP</option>
+                    <option value="sandbox">Sandbox</option>
+                    <option value="survival">Survival</option>
+                    <option value="attack">Attack</option>
+                </select>
+
+                <label for="players">Nombre de Joueurs :</label>
+                <input type="number" id="players" name="players" min="1" max="100" required>
+                
+                <label for="ram">RAM (en Mo) :</label>
+                <input type="number" id="ram" name="ram" required>
+                
+                <label for="cpu">CPU :</label>
+                <input type="number" id="cpu" name="cpu" required>
+                
+                <label for="portTCP">Port TCP :</label>
+                <input type="text" id="portTCP" name="portTCP" required>
+                
+                <label for="portUDP">Port UDP :</label>
+                <input type="text" id="portUDP" name="portUDP" required>
+                
+                <button type="submit">Démarrer le Jeu</button>
+            </form>
+        </div>
+
+        <div class="separator"></div>
+
+        <div class="right-pane">
+            <h2>État des Conteneurs Docker</h2>
+            <button onclick="fetchContainers()">Actualiser les Conteneurs</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nom</th>
+                        <th>Image</th>
+                        <th>État</th>
+                        <th>Ports</th>
+                        <th>Créé</th>
+                    </tr>
+                </thead>
+                <tbody id="container-table-body">
+                    <!-- Les lignes seront remplies par JavaScript -->
+                </tbody>
+            </table>
+
+            <h2>État des Nœuds Swarm</h2>
+            <button onclick="fetchNodes()">Actualiser les Nœuds</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nom d'Hôte</th>
+                        <th>État</th>
+                        <th>Rôle</th>
+                    </tr>
+                </thead>
+                <tbody id="node-table-body">
+                    <!-- Les lignes seront remplies par JavaScript -->
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <script>
@@ -164,6 +160,45 @@
                 tableBody.appendChild(row);
             });
         }
+
+        document.getElementById('game-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const server = document.getElementById('server').value;
+            const alias = document.getElementById('alias').value;
+            const map = document.getElementById('map').value;
+            const mode = document.getElementById('mode').value;
+            const players = document.getElementById('players').value;
+            const ram = document.getElementById('ram').value;
+            const cpu = document.getElementById('cpu').value;
+            const portTCP = document.getElementById('portTCP').value;
+            const portUDP = document.getElementById('portUDP').value;
+
+            const body = JSON.stringify({
+                game: server,
+                alias: alias,
+                env: [`VERSION=v146`, `MAP=${map}`, `MODE=${mode}`, `PLAYERSLIMIT=${players}`],
+                ram: parseInt(ram),
+                cpu: parseInt(cpu),
+                portTCP: portTCP,
+                portUDP: portUDP
+            });
+
+            const response = await fetch('/api/createserver', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: body
+            });
+
+            const result = await response.json();
+            console.log(result);
+
+            // Optionally, refresh containers and nodes to see the new server
+            fetchContainers();
+            fetchNodes();
+        });
 
         window.onload = function() {
             fetchContainers();

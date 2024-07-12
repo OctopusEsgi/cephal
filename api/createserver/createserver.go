@@ -32,17 +32,17 @@ type ContainerInfo struct {
 	Created string `json:"Created"`
 }
 
-func createServer(srvInfo ServerInfo) error {
+func createServer(srvInfo ServerInfo) (*container.CreateResponse, error) {
 	fmt.Println("reçu:", srvInfo)
 
 	// Ports Docker internes doivent être 6567
 	internalPortTCP, err := nat.NewPort("tcp", "6567")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	internalPortUDP, err := nat.NewPort("udp", "6567")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Configure les ports à exposer dans le conteneur
@@ -87,7 +87,7 @@ func createServer(srvInfo ServerInfo) error {
 	// Créer le client Docker
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Créer le conteneur
@@ -100,17 +100,17 @@ func createServer(srvInfo ServerInfo) error {
 		fmt.Sprintf("%s-%s", srvInfo.Game, srvInfo.Alias), // Nom du conteneur
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Démarrer le conteneur
 	if err := cli.ContainerStart(context.Background(), ctn.ID, container.StartOptions{}); err != nil {
-		return err
+		return nil, err
 	}
 
 	log.Printf("Container %s is created and started", ctn.ID)
 
-	return nil
+	return &ctn, nil
 }
 
 func CreateServerAPIHandler(w http.ResponseWriter, r *http.Request) {
@@ -125,10 +125,11 @@ func CreateServerAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = createServer(*jsonServer)
+	response, err := createServer(*jsonServer)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
