@@ -14,13 +14,13 @@ import (
 
 // Paramètre nécessaire pour créer un conteneur
 type ServerInfo struct {
-	Game    string   `json:"game"`    // IMAGE
-	Alias   string   `json:"alias"`   // Alias pour debug
-	Env     []string `json:"env"`     // ENV
-	Ram     int      `json:"ram"`     // RAM
-	CPU     int      `json:"cpu"`     // CPU
-	PortTCP string   `json:"portTCP"` // Port TCP
-	PortUDP string   `json:"portUDP"` // Port UDP
+	Game     string   `json:"game"`
+	Alias    string   `json:"alias"`
+	Env      []string `json:"env"`
+	Ram      int      `json:"ram"`
+	CPU      int      `json:"cpu"`
+	PortsTCP []string `json:"portsTCP"` // Liste des ports TCP externes
+	PortsUDP []string `json:"portsUDP"` // Liste des ports UDP externes
 }
 
 type ContainerInfo struct {
@@ -32,41 +32,67 @@ type ContainerInfo struct {
 	Created string `json:"Created"`
 }
 
+var internalPortsMap = map[string]map[string][]string{
+	"mindustryesgi": {
+		"tcp": {"6567"},
+		"udp": {"6567"},
+	},
+	"programmeperso": {
+		"tcp": {"4000", "4001", "4002", "5892"},
+		"udp": {"9899"},
+	},
+}
+
 func createServer(srvInfo ServerInfo) (*container.CreateResponse, error) {
 	fmt.Println("reçu:", srvInfo)
 
-	// Ports Docker internes doivent être 6567
-	internalPortTCP, err := nat.NewPort("tcp", "6567")
-	if err != nil {
-		return nil, err
-	}
-	internalPortUDP, err := nat.NewPort("udp", "6567")
-	if err != nil {
-		return nil, err
+	// Obtenir les ports internes pour l'image spécifiée
+	internalPorts, ok := internalPortsMap[srvInfo.Game]
+	if !ok {
+		return nil, fmt.Errorf("unknown game image: %s", srvInfo.Game)
 	}
 
-	// Configure les ports à exposer dans le conteneur
-	exposedPorts := nat.PortSet{
-		internalPortTCP: struct{}{},
-		internalPortUDP: struct{}{},
+	exposedPorts := nat.PortSet{}
+	portBindings := nat.PortMap{}
+
+	// Lier les ports TCP
+	if len(srvInfo.PortsTCP) != len(internalPorts["tcp"]) {
+		return nil, fmt.Errorf("mismatch in the number of TCP ports")
+	}
+	for i, externalPort := range srvInfo.PortsTCP {
+		internalPort, err := nat.NewPort("tcp", internalPorts["tcp"][i])
+		if err != nil {
+			return nil, err
+		}
+		exposedPorts[internalPort] = struct{}{}
+		portBindings[internalPort] = []nat.PortBinding{
+			{
+				HostIP:   "0.0.0.0",
+				HostPort: externalPort,
+			},
+		}
 	}
 
-	// Configure HostConfig pour mapper les ports externes vers les ports internes
+	// Lier les ports UDP
+	if len(srvInfo.PortsUDP) != len(internalPorts["udp"]) {
+		return nil, fmt.Errorf("mismatch in the number of UDP ports")
+	}
+	for i, externalPort := range srvInfo.PortsUDP {
+		internalPort, err := nat.NewPort("udp", internalPorts["udp"][i])
+		if err != nil {
+			return nil, err
+		}
+		exposedPorts[internalPort] = struct{}{}
+		portBindings[internalPort] = []nat.PortBinding{
+			{
+				HostIP:   "0.0.0.0",
+				HostPort: externalPort,
+			},
+		}
+	}
+
 	hostConfig := &container.HostConfig{
-		PortBindings: nat.PortMap{
-			internalPortTCP: []nat.PortBinding{
-				{
-					HostIP:   "0.0.0.0",
-					HostPort: srvInfo.PortTCP,
-				},
-			},
-			internalPortUDP: []nat.PortBinding{
-				{
-					HostIP:   "0.0.0.0",
-					HostPort: srvInfo.PortUDP,
-				},
-			},
-		},
+		PortBindings: portBindings,
 		RestartPolicy: container.RestartPolicy{
 			Name: "always",
 		},
@@ -76,7 +102,6 @@ func createServer(srvInfo ServerInfo) (*container.CreateResponse, error) {
 		},
 	}
 
-	// Configure le conteneur
 	config := &container.Config{
 		Image:        srvInfo.Game,
 		Env:          srvInfo.Env,
@@ -84,26 +109,23 @@ func createServer(srvInfo ServerInfo) (*container.CreateResponse, error) {
 		Hostname:     fmt.Sprintf("%s-%s", srvInfo.Game, srvInfo.Alias),
 	}
 
-	// Créer le client Docker
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return nil, err
 	}
 
-	// Créer le conteneur
 	ctn, err := cli.ContainerCreate(
 		context.Background(),
-		config,     // Config du conteneur
-		hostConfig, // Config de l'hôte
-		nil,        // NetworkingConfig
-		nil,        // Platform -- Pas utile pour l'instant ??
-		fmt.Sprintf("%s-%s", srvInfo.Game, srvInfo.Alias), // Nom du conteneur
+		config,
+		hostConfig,
+		nil,
+		nil,
+		fmt.Sprintf("%s-%s", srvInfo.Game, srvInfo.Alias),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	// Démarrer le conteneur
 	if err := cli.ContainerStart(context.Background(), ctn.ID, container.StartOptions{}); err != nil {
 		return nil, err
 	}
