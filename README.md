@@ -15,16 +15,16 @@ Cephal permet de réception des requêtes API Rest pour manipuler un envirroneme
 
 En cURL:
 ```c
-curl --location 'http://10.12.13.14:8080/api/createserver' \
+curl --location 'http://docker.home:8080/api/createserver' \
 --header 'Content-Type: application/json' \
 --data '{
     "game": "mindustryesgi",
-    "alias": "srv1",
-    "env": ["VERSION=v146", "MAP=Passage", "MODE=pvp", "PLAYERSLIMIT=2"],
-    "ram": 1024,
+    "alias": "srv100",
+    "env": ["VERSION=v146", "MAP=Tendrils", "MODE=sandbox", "PLAYERSLIMIT=2"],
+    "ram": 512,
     "cpu": 2,
-    "portTCP": "6567",
-	"portUDP": "6567"
+    "portsTCP": ["25010"],
+    "portsUDP": ["25010"]
 }'
 ```
 
