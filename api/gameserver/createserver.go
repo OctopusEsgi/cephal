@@ -1,4 +1,4 @@
-package createserver
+package gameserver
 
 import (
 	"context"

@@ -2,7 +2,7 @@ package main
 
 import (
 	"cephal/api/containers"
-	"cephal/api/createserver"
+	"cephal/api/gameserver"
 	"cephal/api/nodes"
 	"cephal/api/services"
 	"fmt"
@@ -33,7 +33,7 @@ func main() {
 	// http.HandleFunc("/api/container/", )
 	http.HandleFunc("/api/nodes", nodes.NodesAPIHandler)
 	http.HandleFunc("/api/services", services.ServicesAPIHandler)
-	http.HandleFunc("/api/createserver", createserver.CreateServerAPIHandler)
+	http.HandleFunc("/api/createserver", gameserver.CreateServerAPIHandler)
 	http.HandleFunc("/", frontHandler)
 	fmt.Println("Lancement du serveur sur le port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
