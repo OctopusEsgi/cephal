@@ -22,6 +22,8 @@
                 
                 <label for="map">Carte :</label>
                 <select id="map" name="map" required>
+                    <option value="Acient_Caldera">Acient Caldera</option>
+                    <option value="Archipelago">Archipelago</option>
                     <option value="Tendrils">Tendrils</option>
                     <option value="Glacier">Glacier</option>
                 </select>
@@ -104,27 +106,27 @@
                 const row = document.createElement('tr');
 
                 const idCell = document.createElement('td');
-                idCell.textContent = container.ID;
+                idCell.textContent = container.id;
                 row.appendChild(idCell);
 
                 const nameCell = document.createElement('td');
-                nameCell.textContent = container.Name;
+                nameCell.textContent = container.name;
                 row.appendChild(nameCell);
 
                 const imageCell = document.createElement('td');
-                imageCell.textContent = container.Image;
+                imageCell.textContent = container.image;
                 row.appendChild(imageCell);
 
                 const statusCell = document.createElement('td');
-                statusCell.textContent = container.Status;
+                statusCell.textContent = container.status;
                 row.appendChild(statusCell);
 
                 const portsCell = document.createElement('td');
-                portsCell.textContent = container.Ports;
+                portsCell.textContent = container.ports;
                 row.appendChild(portsCell);
 
                 const createdCell = document.createElement('td');
-                createdCell.textContent = container.Created;
+                createdCell.textContent = container.created;
                 row.appendChild(createdCell);
 
                 tableBody.appendChild(row);
@@ -162,43 +164,43 @@
         }
 
         document.getElementById('game-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
+        event.preventDefault();
 
-            const server = document.getElementById('server').value;
-            const alias = document.getElementById('alias').value;
-            const map = document.getElementById('map').value;
-            const mode = document.getElementById('mode').value;
-            const players = document.getElementById('players').value;
-            const ram = document.getElementById('ram').value;
-            const cpu = document.getElementById('cpu').value;
-            const portTCP = document.getElementById('portTCP').value;
-            const portUDP = document.getElementById('portUDP').value;
+        const server = document.getElementById('server').value;
+        const alias = document.getElementById('alias').value;
+        const map = document.getElementById('map').value;
+        const mode = document.getElementById('mode').value;
+        const players = document.getElementById('players').value;
+        const ram = document.getElementById('ram').value;
+        const cpu = document.getElementById('cpu').value;
+        const portsTCP = document.getElementById('portTCP').value;
+        const portsUDP = document.getElementById('portUDP').value;
 
-            const body = JSON.stringify({
-                game: server,
-                alias: alias,
-                env: [`VERSION=v146`, `MAP=${map}`, `MODE=${mode}`, `PLAYERSLIMIT=${players}`],
-                ram: parseInt(ram),
-                cpu: parseInt(cpu),
-                portTCP: portTCP,
-                portUDP: portUDP
-            });
-
-            const response = await fetch('/api/createserver', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: body
-            });
-
-            const result = await response.json();
-            console.log(result);
-
-            // Optionally, refresh containers and nodes to see the new server
-            fetchContainers();
-            fetchNodes();
+        const body = JSON.stringify({
+            game: server,
+            alias: alias,
+            env: [`VERSION=v146`, `MAP=${map}`, `MODE=${mode}`, `PLAYERSLIMIT=${players}`],
+            ram: parseInt(ram),
+            cpu: parseInt(cpu),
+            portsTCP: [portsTCP],
+            portsUDP: [portsUDP] 
         });
+
+    const response = await fetch('/api/createserver', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: body
+    });
+
+    const result = await response.json();
+    console.log(result);
+
+    // Optionally, refresh containers and nodes to see the new server
+    fetchContainers();
+    fetchNodes();
+});
 
         window.onload = function() {
             fetchContainers();
