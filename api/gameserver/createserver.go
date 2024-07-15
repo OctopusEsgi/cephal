@@ -17,8 +17,6 @@ type ServerInfo struct {
 	Game     string   `json:"game"`
 	Alias    string   `json:"alias"`
 	Env      []string `json:"env"`
-	Ram      int      `json:"ram"`
-	CPU      int      `json:"cpu"`
 	PortsTCP []string `json:"portsTCP"` // Liste des ports TCP externes
 	PortsUDP []string `json:"portsUDP"` // Liste des ports UDP externes
 }
@@ -32,22 +30,17 @@ type ContainerInfo struct {
 	Created string `json:"Created"`
 }
 
-var internalPortsMap = map[string]map[string][]string{
-	"mindustryesgi": {
-		"tcp": {"6567"},
-		"udp": {"6567"},
-	},
-	"programmeperso": {
-		"tcp": {"4000", "4001", "4002", "5892"},
-		"udp": {"9899"},
-	},
-}
-
 func createServer(srvInfo ServerInfo) (*container.CreateResponse, error) {
 	fmt.Println("reçu:", srvInfo)
 
+	// Obtenir les spécifications internes pour le jeu spécifié
+	internalSpec, ok := internalGameSpec[srvInfo.Game]
+	if !ok {
+		return nil, fmt.Errorf("unknown game image: %s", srvInfo.Game)
+	}
+
 	// Obtenir les ports internes pour l'image spécifiée
-	internalPorts, ok := internalPortsMap[srvInfo.Game]
+	internalPorts, ok := internalGamePortsMap[srvInfo.Game]
 	if !ok {
 		return nil, fmt.Errorf("unknown game image: %s", srvInfo.Game)
 	}
@@ -97,8 +90,8 @@ func createServer(srvInfo ServerInfo) (*container.CreateResponse, error) {
 			Name: "always",
 		},
 		Resources: container.Resources{
-			Memory:   int64(srvInfo.Ram) * 1024 * 1024, // Convertir MB en bytes
-			NanoCPUs: int64(srvInfo.CPU) * 1e9,         // Convertir CPU en nanosecondes
+			Memory:   int64(internalSpec["ram"]) * 1024 * 1024, // Convertir MB en bytes
+			NanoCPUs: int64(internalSpec["core"]) * 1e9,        // Convertir CPU en nanosecondes
 		},
 	}
 
