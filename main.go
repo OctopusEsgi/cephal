@@ -34,6 +34,7 @@ func main() {
 	http.HandleFunc("/api/nodes", nodes.NodesAPIHandler)
 	http.HandleFunc("/api/services", services.ServicesAPIHandler)
 	http.HandleFunc("/api/createserver", gameserver.CreateServerAPIHandler)
+	http.HandleFunc("/api/deleteserver", gameserver.DeleteServerAPIHandler)
 	http.HandleFunc("/", frontHandler)
 	fmt.Println("Lancement du serveur sur le port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))

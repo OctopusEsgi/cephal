@@ -11,15 +11,17 @@ import (
 	"github.com/docker/docker/client"
 )
 
+// ContainerInfo est la structure contenant les informations sur le conteneur
 type ContainerInfo struct {
-	ID      string `json:"ID"`
-	Image   string `json:"Image"`
-	Status  string `json:"Status"`
-	Name    string `json:"Name"`
-	Ports   string `json:"Ports"`
-	Created string `json:"Created"`
+	ID      string `json:"id"`
+	Image   string `json:"image"`
+	Status  string `json:"status"`
+	Name    string `json:"name"`
+	Ports   string `json:"ports"`
+	Created string `json:"created"`
 }
 
+// getContainers récupère la liste des conteneurs
 func getContainers() ([]ContainerInfo, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
@@ -51,7 +53,59 @@ func getContainers() ([]ContainerInfo, error) {
 	return containerInfos, nil
 }
 
+// getContainerByID récupère les informations d'un conteneur par son ID
+func getContainerByID(id string) (*ContainerInfo, error) {
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return nil, err
+	}
+
+	containerJSON, err := cli.ContainerInspect(context.Background(), id)
+	if err != nil {
+		return nil, err
+	}
+
+	ports := ""
+	for port, bindings := range containerJSON.NetworkSettings.Ports {
+		for _, binding := range bindings {
+			ports += fmt.Sprintf("%s:%s -> %s, ", binding.HostIP, binding.HostPort, port)
+		}
+	}
+
+	createdTime, err := time.Parse(time.RFC3339Nano, containerJSON.Created)
+	if err != nil {
+		return nil, err
+	}
+
+	containerInfo := &ContainerInfo{
+		ID:      containerJSON.ID[:10],
+		Image:   containerJSON.Config.Image,
+		Status:  containerJSON.State.Status,
+		Name:    containerJSON.Name,
+		Ports:   ports,
+		Created: createdTime.Format(time.RFC3339),
+	}
+
+	return containerInfo, nil
+}
+
+// ContainersapiHandler gère les requêtes API pour les conteneurs
 func ContainersapiHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id != "" {
+		// Si un ID est fourni, récupérer les informations du conteneur correspondant
+		container, err := getContainerByID(id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(container)
+		return
+	}
+
+	// Sinon, récupérer la liste de tous les conteneurs
 	containers, err := getContainers()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -60,4 +114,9 @@ func ContainersapiHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(containers)
+}
+
+func main() {
+	http.HandleFunc("/api/containers", ContainersapiHandler)
+	http.ListenAndServe(":8080", nil)
 }
