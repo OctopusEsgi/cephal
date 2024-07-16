@@ -75,6 +75,21 @@ button:hover {
     background-color: #0056b3;
 }
 
+.delete-button {
+    background-color: red; 
+    color: white; 
+    border: none; 
+    padding: 10px 20px; 
+    cursor: pointer; 
+    border-radius: 5px;
+    font-size: 14px; 
+}
+
+
+.delete-button:hover {
+    background-color: darkred;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -96,4 +111,35 @@ th {
 
 tr:nth-child(even) {
     background-color: #f9f9f9;
+}
+
+.toast {
+    visibility: hidden;
+    min-width: 250px;
+    margin-left: -125px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: fixed;
+    z-index: 1;
+    left: 50%;
+    bottom: 30px;
+    font-size: 17px;
+}
+
+.toast.show {
+    visibility: visible;
+    animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@keyframes fadein {
+    from {bottom: 0; opacity: 0;} 
+    to {bottom: 30px; opacity: 1;}
+}
+
+@keyframes fadeout {
+    from {bottom: 30px; opacity: 1;} 
+    to {bottom: 0; opacity: 0;}
 }

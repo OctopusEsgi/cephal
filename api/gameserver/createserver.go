@@ -123,7 +123,7 @@ func createServer(srvInfo ServerInfo) (*container.CreateResponse, error) {
 		return nil, err
 	}
 
-	log.Printf("Container %s is created and started", ctn.ID)
+	log.Printf("Container %s est créé et démarré", ctn.ID)
 
 	return &ctn, nil
 }

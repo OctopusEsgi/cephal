@@ -3,6 +3,7 @@ package gameserver
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/docker/docker/api/types/container"
@@ -54,7 +55,7 @@ func deleteGameServer(infos ServerDelInfo) error {
 	if err != nil {
 		return err
 	}
-
+	log.Printf("Container %s est stoppé et détruit", infos.ContainerID)
 	return nil
 }
 

@@ -19,3 +19,12 @@ var internalGameSpec = map[string]map[string]int{
 		"ram":  512,
 	},
 }
+
+// var internalGameEnv := {
+// "mindustryesgi":{
+// "VERSION": ???,
+// "MAP": ???,
+// "MODE": ???,
+// "PLAYERSLIMIT": ???,
+// }
+// }

@@ -56,7 +56,7 @@
         </div>
 
         <div class="separator"></div>
-
+        <div class="toast" id="toast">Action de suppression effectuée avec succès.</div>
         <div class="right-pane">
             <h2>État des Conteneurs Docker</h2>
             <button onclick="fetchContainers()">Actualiser les Conteneurs</button>
@@ -69,6 +69,7 @@
                         <th>État</th>
                         <th>Ports</th>
                         <th>Créé</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="container-table-body">
@@ -93,6 +94,7 @@
             </table>
         </div>
     </div>
+    
 
     <script>
         async function fetchContainers() {
@@ -104,31 +106,39 @@
 
             containers.forEach(container => {
                 const row = document.createElement('tr');
-
+            
                 const idCell = document.createElement('td');
                 idCell.textContent = container.id;
                 row.appendChild(idCell);
-
+            
                 const nameCell = document.createElement('td');
                 nameCell.textContent = container.name;
                 row.appendChild(nameCell);
-
+            
                 const imageCell = document.createElement('td');
                 imageCell.textContent = container.image;
                 row.appendChild(imageCell);
-
+            
                 const statusCell = document.createElement('td');
                 statusCell.textContent = container.status;
                 row.appendChild(statusCell);
-
+            
                 const portsCell = document.createElement('td');
                 portsCell.textContent = container.ports;
                 row.appendChild(portsCell);
-
+            
                 const createdCell = document.createElement('td');
                 createdCell.textContent = container.created;
                 row.appendChild(createdCell);
-
+            
+                const actionCell = document.createElement('td');
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '🗑';
+                deleteButton.classList.add('delete-button'); // Ajout de la classe CSS
+                deleteButton.onclick = () => deleteContainer(container.id);
+                actionCell.appendChild(deleteButton);
+                row.appendChild(actionCell);
+            
                 tableBody.appendChild(row);
             });
         }
@@ -163,44 +173,84 @@
             });
         }
 
+        async function deleteContainer(containerId) {
+            const stopOptions = {
+                Signal: "SIGTERM",
+                Timeout: 0 // Vous pouvez ajuster le délai d'attente
+            };
+            
+            const removeOptions = {
+                RemoveVolumes: true,
+                RemoveLinks: false,
+                Force: true
+            };
+            
+            const body = JSON.stringify({
+                container_id: containerId,
+                stopoptions: stopOptions,
+                removeoptions: removeOptions
+            });
+
+            const response = await fetch('/api/deleteserver', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: body
+            });
+
+            const result = await response.json();
+            console.log(result);
+            //showPopup();
+            showToast("Action de suppression effectuée avec succès.");
+            // Actualiser les conteneurs après la suppression
+            fetchContainers();
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000); // Disparaît après 3 secondes (3000 ms)
+        }
+
         document.getElementById('game-form').addEventListener('submit', async function(event) {
-        event.preventDefault();
+            event.preventDefault();
 
-        const server = document.getElementById('server').value;
-        const alias = document.getElementById('alias').value;
-        const map = document.getElementById('map').value;
-        const mode = document.getElementById('mode').value;
-        const players = document.getElementById('players').value;
-        const ram = document.getElementById('ram').value;
-        const cpu = document.getElementById('cpu').value;
-        const portsTCP = document.getElementById('portTCP').value;
-        const portsUDP = document.getElementById('portUDP').value;
+            const server = document.getElementById('server').value;
+            const alias = document.getElementById('alias').value;
+            const map = document.getElementById('map').value;
+            const mode = document.getElementById('mode').value;
+            const players = document.getElementById('players').value;
+            const portsTCP = document.getElementById('portTCP').value;
+            const portsUDP = document.getElementById('portUDP').value;
 
-        const body = JSON.stringify({
-            game: server,
-            alias: alias,
-            env: [`VERSION=v146`, `MAP=${map}`, `MODE=${mode}`, `PLAYERSLIMIT=${players}`],
-            ram: parseInt(ram),
-            cpu: parseInt(cpu),
-            portsTCP: [portsTCP],
-            portsUDP: [portsUDP] 
+            const body = JSON.stringify({
+                game: server,
+                alias: alias,
+                env: [`VERSION=v146`, `MAP=${map}`, `MODE=${mode}`, `PLAYERSLIMIT=${players}`],
+                portsTCP: [portsTCP],
+                portsUDP: [portsUDP] 
+            });
+
+            const response = await fetch('/api/createserver', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: body
+            });
+
+            const result = await response.json();
+            console.log(result);
+
+            // Optionally, refresh containers and nodes to see the new server
+            fetchContainers();
+            fetchNodes();
         });
-
-    const response = await fetch('/api/createserver', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: body
-    });
-
-    const result = await response.json();
-    console.log(result);
-
-    // Optionally, refresh containers and nodes to see the new server
-    fetchContainers();
-    fetchNodes();
-});
 
         window.onload = function() {
             fetchContainers();
