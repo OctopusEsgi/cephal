@@ -38,13 +38,7 @@
 
                 <label for="players">Nombre de Joueurs :</label>
                 <input type="number" id="players" name="players" min="1" max="100" required>
-                
-                <label for="ram">RAM (en Mo) :</label>
-                <input type="number" id="ram" name="ram" required>
-                
-                <label for="cpu">CPU :</label>
-                <input type="number" id="cpu" name="cpu" required>
-                
+                                
                 <label for="portTCP">Port TCP :</label>
                 <input type="text" id="portTCP" name="portTCP" required>
                 
@@ -133,8 +127,8 @@
             
                 const actionCell = document.createElement('td');
                 const deleteButton = document.createElement('button');
-                deleteButton.textContent = '🗑';
-                deleteButton.classList.add('delete-button'); // Ajout de la classe CSS
+                deleteButton.textContent = '☓'; // <----------------------------- ICONE DELETE 🪓💣
+                deleteButton.classList.add('delete-button'); 
                 deleteButton.onclick = () => deleteContainer(container.id);
                 actionCell.appendChild(deleteButton);
                 row.appendChild(actionCell);

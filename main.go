@@ -5,6 +5,8 @@ import (
 	"cephal/api/gameserver"
 	"cephal/api/nodes"
 	"cephal/api/services"
+	"cephal/imagesinit"
+
 	"fmt"
 	"html/template"
 	"log"
@@ -26,9 +28,14 @@ func frontHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// Serve static files (CSS, JS, images, etc.) from the "front" directory
+	// -- TEST --
+	fmt.Println(imagesinit.GetImagesList())
+	// --fe
+	//
+	//
+	// FRONT
 	http.Handle("/front/", http.StripPrefix("/front/", http.FileServer(http.Dir("front"))))
-
+	// API
 	http.HandleFunc("/api/containers", containers.ContainersapiHandler)
 	// http.HandleFunc("/api/container/", )
 	http.HandleFunc("/api/nodes", nodes.NodesAPIHandler)
@@ -37,5 +44,6 @@ func main() {
 	http.HandleFunc("/api/deleteserver", gameserver.DeleteServerAPIHandler)
 	http.HandleFunc("/", frontHandler)
 	fmt.Println("Lancement du serveur sur le port 8080")
+	// LANCEMENT SRV
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

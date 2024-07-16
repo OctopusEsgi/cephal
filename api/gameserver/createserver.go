@@ -31,7 +31,6 @@ type ContainerInfo struct {
 }
 
 func createServer(srvInfo ServerInfo) (*container.CreateResponse, error) {
-	fmt.Println("reçu:", srvInfo)
 
 	// Obtenir les spécifications internes pour le jeu spécifié
 	internalSpec, ok := internalGameSpec[srvInfo.Game]
@@ -133,6 +132,7 @@ func CreateServerAPIHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+
 	jsonServer := &ServerInfo{}
 	err := json.NewDecoder(r.Body).Decode(jsonServer)
 	if err != nil {
@@ -140,9 +140,11 @@ func CreateServerAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("Reception de [IP:%s], data : %s", r.RemoteAddr, *jsonServer)
 	response, err := createServer(*jsonServer)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("ERREUR: %s", err.Error())
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

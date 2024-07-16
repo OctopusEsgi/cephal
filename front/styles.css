@@ -78,11 +78,12 @@ button:hover {
 .delete-button {
     background-color: red; 
     color: white; 
+    font-weight: bold;
     border: none; 
-    padding: 10px 20px; 
+    padding: 5px 10px; 
     cursor: pointer; 
     border-radius: 5px;
-    font-size: 14px; 
+    font-size: 20px; 
 }
 
 
