@@ -8,6 +8,7 @@ import (
 	initconf "cephal/utils/config"
 	"cephal/utils/imagesinit"
 	"os"
+	"path/filepath"
 
 	"fmt"
 	"html/template"
@@ -45,7 +46,7 @@ func main() {
 
 	// -- TEST --
 	images := []imagesinit.ImagePath{
-		{ImageName: "mindustryesgi:latest", Dockerfile: "path/to/your/Dockerfile1"},
+		{ImageName: "mindustryesgi:latest", Dockerfile: "/home/octopus/godev/cephal/config/builder/mindustryesgi/Dockerfile"},
 	}
 
 	err = imagesinit.EnsureImagesList(images)
@@ -56,7 +57,9 @@ func main() {
 	//
 	//
 	// FRONT
-	// http.Handle("/front/", http.StripPrefix("/front/", http.FileServer(http.Dir("front"))))
+	// Serve static files
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(filepath.Join(configCephal.Server.RootDirSRV, "static")))))
+
 	// API
 	http.HandleFunc("/api/containers", containers.ContainersapiHandler)
 	http.HandleFunc("/api/nodes", nodes.NodesAPIHandler)
@@ -75,5 +78,4 @@ func main() {
 		// Sinon, utiliser http.ListenAndServe sans TLS
 		log.Fatal(http.ListenAndServe(addr, nil))
 	}
-
 }
