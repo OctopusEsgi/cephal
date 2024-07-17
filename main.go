@@ -56,7 +56,7 @@ func main() {
 	//
 	//
 	// FRONT
-	http.Handle("/front/", http.StripPrefix("/front/", http.FileServer(http.Dir("front"))))
+	// http.Handle("/front/", http.StripPrefix("/front/", http.FileServer(http.Dir("front"))))
 	// API
 	http.HandleFunc("/api/containers", containers.ContainersapiHandler)
 	http.HandleFunc("/api/nodes", nodes.NodesAPIHandler)
@@ -66,5 +66,14 @@ func main() {
 	http.HandleFunc("/", frontHandler(configCephal))
 	log.Printf("Lancement du serveur sur le port %d", configCephal.Server.Port)
 	// LANCEMENT SRV
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", configCephal.Server.Port), nil))
+	addr := fmt.Sprintf(":%d", configCephal.Server.Port)
+
+	if configCephal.Server.TLS.Enabled {
+		// Si TLS est activé, utiliser http.ListenAndServeTLS avec vos certificats
+		log.Fatal(http.ListenAndServeTLS(addr, configCephal.Server.TLS.CertFile, configCephal.Server.TLS.KeyFile, nil))
+	} else {
+		// Sinon, utiliser http.ListenAndServe sans TLS
+		log.Fatal(http.ListenAndServe(addr, nil))
+	}
+
 }
