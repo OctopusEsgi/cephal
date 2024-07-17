@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 
+	initconf "cephal/utils/config"
+
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
@@ -30,29 +32,31 @@ type ContainerInfo struct {
 	Created string `json:"Created"`
 }
 
-func createServer(srvInfo ServerInfo) (*container.CreateResponse, error) {
-
-	// Obtenir les spécifications internes pour le jeu spécifié
-	internalSpec, ok := internalGameSpec[srvInfo.Game]
-	if !ok {
-		return nil, fmt.Errorf("unknown game image: %s", srvInfo.Game)
+func getGameImageConfig(game string, confCephalIMG []initconf.GameImage) (*initconf.GameImage, error) {
+	for _, img := range confCephalIMG {
+		if img.Nom == game {
+			return &img, nil
+		}
 	}
+	return nil, fmt.Errorf("image de jeux non définie: %s", game)
+}
 
-	// Obtenir les ports internes pour l'image spécifiée
-	internalPorts, ok := internalGamePortsMap[srvInfo.Game]
-	if !ok {
-		return nil, fmt.Errorf("unknown game image: %s", srvInfo.Game)
+func createServer(srvInfo ServerInfo, confCephal *initconf.ConfigCephal) (*container.CreateResponse, error) {
+
+	gameConfig, err := getGameImageConfig(srvInfo.Game, confCephal.GameImages)
+	if err != nil {
+		return nil, err
 	}
 
 	exposedPorts := nat.PortSet{}
 	portBindings := nat.PortMap{}
 
 	// Lier les ports TCP
-	if len(srvInfo.PortsTCP) != len(internalPorts["tcp"]) {
+	if len(srvInfo.PortsTCP) != len(gameConfig.Ports.TCP) {
 		return nil, fmt.Errorf("mismatch in the number of TCP ports")
 	}
 	for i, externalPort := range srvInfo.PortsTCP {
-		internalPort, err := nat.NewPort("tcp", internalPorts["tcp"][i])
+		internalPort, err := nat.NewPort("tcp", gameConfig.Ports.TCP[i])
 		if err != nil {
 			return nil, err
 		}
@@ -66,11 +70,11 @@ func createServer(srvInfo ServerInfo) (*container.CreateResponse, error) {
 	}
 
 	// Lier les ports UDP
-	if len(srvInfo.PortsUDP) != len(internalPorts["udp"]) {
+	if len(srvInfo.PortsUDP) != len(gameConfig.Ports.UDP) {
 		return nil, fmt.Errorf("mismatch in the number of UDP ports")
 	}
 	for i, externalPort := range srvInfo.PortsUDP {
-		internalPort, err := nat.NewPort("udp", internalPorts["udp"][i])
+		internalPort, err := nat.NewPort("udp", gameConfig.Ports.UDP[i])
 		if err != nil {
 			return nil, err
 		}
@@ -89,8 +93,8 @@ func createServer(srvInfo ServerInfo) (*container.CreateResponse, error) {
 			Name: "always",
 		},
 		Resources: container.Resources{
-			Memory:   int64(internalSpec["ram"]) * 1024 * 1024, // Convertir MB en bytes
-			NanoCPUs: int64(internalSpec["core"]) * 1e9,        // Convertir CPU en nanosecondes
+			Memory:   int64(gameConfig.Spec.RAM) * 1024 * 1024, // Convertir MB en bytes
+			NanoCPUs: int64(gameConfig.Spec.Core) * 1e9,        // Convertir CPU en nanosecondes
 		},
 	}
 
@@ -127,26 +131,28 @@ func createServer(srvInfo ServerInfo) (*container.CreateResponse, error) {
 	return &ctn, nil
 }
 
-func CreateServerAPIHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+func CreateServerAPIHandler(confCephal *initconf.ConfigCephal) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
 
-	jsonServer := &ServerInfo{}
-	err := json.NewDecoder(r.Body).Decode(jsonServer)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+		jsonServer := &ServerInfo{}
+		err := json.NewDecoder(r.Body).Decode(jsonServer)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
-	log.Printf("Reception de [IP:%s], data : %s", r.RemoteAddr, *jsonServer)
-	response, err := createServer(*jsonServer)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("ERREUR: %s", err.Error())
-		return
+		log.Printf("Reception de [IP:%s], data : %s", r.RemoteAddr, *jsonServer)
+		response, err := createServer(*jsonServer, confCephal)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Printf("ERREUR: %s", err.Error())
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
 }

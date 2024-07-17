@@ -5,61 +5,17 @@ import (
 	"cephal/api/gameserver"
 	"cephal/api/nodes"
 	"cephal/api/services"
-	"cephal/imagesinit"
+	initconf "cephal/utils/config"
+	"cephal/utils/imagesinit"
 	"os"
 
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
-
-	"gopkg.in/yaml.v3"
 )
 
-type ServerConfig struct {
-	TLS struct {
-		Enabled  bool   `yaml:"enabled"`
-		CertFile string `yaml:"cert_file"`
-		KeyFile  string `yaml:"key_file"`
-	} `yaml:"tls"`
-	Port       int    `yaml:"port"`
-	RootDirSRV string `yaml:"root_directory"`
-}
-
-type GameImage struct {
-	Nom   string `yaml:"nom"`
-	Tag   string `yaml:"tag"`
-	Ports struct {
-		TCP []string `yaml:"tcp"`
-		UDP []string `yaml:"udp"`
-	} `yaml:"ports"`
-	Spec struct {
-		Core int `yaml:"core"`
-		RAM  int `yaml:"ram"`
-	} `yaml:"spec"`
-}
-
-type ConfigCephal struct {
-	Server     ServerConfig `yaml:"server"`
-	GameImages []GameImage  `yaml:"gameimages"`
-}
-
-func loadConfig(filename string) (*ConfigCephal, error) {
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	var config ConfigCephal
-	err = yaml.Unmarshal(data, &config)
-	if err != nil {
-		return nil, err
-	}
-
-	return &config, nil
-}
-
-func frontHandler(config *ConfigCephal) http.HandlerFunc {
+func frontHandler(config *initconf.ConfigCephal) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) { //On fait ça pour que le handler recoit que
 		tmplPath := config.Server.RootDirSRV
 		t, err := template.ParseFiles(fmt.Sprintf("%s/front.html", tmplPath))
@@ -80,7 +36,7 @@ func main() {
 		log.Fatal("Vous devez spécifié un chemin en tant qu'argument de cephal.")
 	}
 	configPath := os.Args[1]
-	configCephal, err := loadConfig(configPath)
+	configCephal, err := initconf.LoadConfig(configPath)
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	} else {
@@ -105,7 +61,7 @@ func main() {
 	http.HandleFunc("/api/containers", containers.ContainersapiHandler)
 	http.HandleFunc("/api/nodes", nodes.NodesAPIHandler)
 	http.HandleFunc("/api/services", services.ServicesAPIHandler)
-	http.HandleFunc("/api/createserver", gameserver.CreateServerAPIHandler)
+	http.HandleFunc("/api/createserver", gameserver.CreateServerAPIHandler(configCephal))
 	http.HandleFunc("/api/deleteserver", gameserver.DeleteServerAPIHandler)
 	http.HandleFunc("/", frontHandler(configCephal))
 	log.Printf("Lancement du serveur sur le port %d", configCephal.Server.Port)
