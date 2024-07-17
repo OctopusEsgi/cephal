@@ -1,0 +1,14 @@
+[Unit]
+Description=Cephal projet octopus
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/cephal
+WorkingDirectory=/usr/local/bin
+User=octopus
+Group=octopus
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

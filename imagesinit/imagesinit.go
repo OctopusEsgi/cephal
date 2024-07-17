@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"log"
 	"os"
 
 	"github.com/docker/docker/api/types"
@@ -15,6 +16,11 @@ import (
 type imagesListParsed struct {
 	ID    string
 	Image []string
+}
+
+type ImagePath struct {
+	ImageName  string
+	Dockerfile string
 }
 
 func GetImagesList() ([]imagesListParsed, error) {
@@ -42,6 +48,8 @@ func GetImagesList() ([]imagesListParsed, error) {
 	return parsedList, nil
 }
 
+// SOURCE : https://medium.com/@Frikkylikeme/controlling-docker-with-golang-code-b213d9699998
+// Merci à Frikky !!
 func buildImage(client *client.Client, tags []string, dockerfile string) error {
 	ctx := context.Background()
 
@@ -55,6 +63,7 @@ func buildImage(client *client.Client, tags []string, dockerfile string) error {
 	if err != nil {
 		return err
 	}
+	defer dockerFileReader.Close()
 
 	// Read the actual Dockerfile
 	readDockerFile, err := io.ReadAll(dockerFileReader)
@@ -83,7 +92,6 @@ func buildImage(client *client.Client, tags []string, dockerfile string) error {
 	dockerFileTarReader := bytes.NewReader(buf.Bytes())
 
 	// Define the build options to use for the file
-	// https://godoc.org/github.com/docker/docker/api/types#ImageBuildOptions
 	buildOptions := types.ImageBuildOptions{
 		Context:    dockerFileTarReader,
 		Dockerfile: dockerfile,
@@ -109,5 +117,53 @@ func buildImage(client *client.Client, tags []string, dockerfile string) error {
 		return err
 	}
 
+	return nil
+}
+
+func imageExists(imageName string) (bool, error) {
+	images, err := GetImagesList()
+	if err != nil {
+		return false, err
+	}
+
+	for _, img := range images {
+		for _, tag := range img.Image {
+			if tag == imageName {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+func ensureImage(imageName string, tags []string, dockerfile string) error {
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	exists, err := imageExists(imageName)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		err := buildImage(cli, tags, dockerfile)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func EnsureImagesList(images []ImagePath) error {
+	for _, img := range images {
+		tags := []string{img.ImageName}
+		err := ensureImage(img.ImageName, tags, img.Dockerfile)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
