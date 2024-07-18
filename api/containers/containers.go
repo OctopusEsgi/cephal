@@ -22,7 +22,7 @@ type ContainerInfo struct {
 }
 
 // getContainers récupère la liste des conteneurs
-func getContainers() ([]ContainerInfo, error) {
+func GetContainers() ([]ContainerInfo, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func ContainersapiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Sinon, récupérer la liste de tous les conteneurs
-	containers, err := getContainers()
+	containers, err := GetContainers()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -114,9 +114,4 @@ func ContainersapiHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(containers)
-}
-
-func main() {
-	http.HandleFunc("/api/containers", ContainersapiHandler)
-	http.ListenAndServe(":8080", nil)
 }

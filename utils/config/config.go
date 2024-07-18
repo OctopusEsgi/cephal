@@ -15,6 +15,12 @@ type ServerConfig struct {
 	Port       int    `yaml:"port"`
 	RootDirSRV string `yaml:"root_directory"`
 }
+type GlobalConfig struct {
+	Portrange struct {
+		Min int `yaml:"min"`
+		Max int `yaml:"max"`
+	} `yaml:"portrange"`
+}
 
 type GameImage struct {
 	Nom   string `yaml:"nom"`
@@ -31,6 +37,7 @@ type GameImage struct {
 
 type ConfigCephal struct {
 	Server     ServerConfig `yaml:"server"`
+	Global     GlobalConfig `yaml:"global"`
 	GameImages []GameImage  `yaml:"gameimages"`
 }
 

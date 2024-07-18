@@ -4,6 +4,7 @@ import (
 	"cephal/api/containers"
 	"cephal/api/gameserver"
 	"cephal/api/nodes"
+	apiPort "cephal/api/ports"
 	"cephal/api/services"
 	initconf "cephal/utils/config"
 	"cephal/utils/imagesinit"
@@ -57,25 +58,23 @@ func main() {
 	//
 	//
 	// FRONT
-	// Serve static files
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(filepath.Join(configCephal.Server.RootDirSRV, "static")))))
-
 	// API
 	http.HandleFunc("/api/containers", containers.ContainersapiHandler)
 	http.HandleFunc("/api/nodes", nodes.NodesAPIHandler)
 	http.HandleFunc("/api/services", services.ServicesAPIHandler)
 	http.HandleFunc("/api/createserver", gameserver.CreateServerAPIHandler(configCephal))
 	http.HandleFunc("/api/deleteserver", gameserver.DeleteServerAPIHandler)
+	http.HandleFunc("/api/getfreeports", apiPort.PortsAPIHandler)
 	http.HandleFunc("/", frontHandler(configCephal))
 	log.Printf("Lancement du serveur sur le port %d", configCephal.Server.Port)
+	// --
+
 	// LANCEMENT SRV
 	addr := fmt.Sprintf(":%d", configCephal.Server.Port)
-
 	if configCephal.Server.TLS.Enabled {
-		// Si TLS est activé, utiliser http.ListenAndServeTLS avec vos certificats
 		log.Fatal(http.ListenAndServeTLS(addr, configCephal.Server.TLS.CertFile, configCephal.Server.TLS.KeyFile, nil))
 	} else {
-		// Sinon, utiliser http.ListenAndServe sans TLS
 		log.Fatal(http.ListenAndServe(addr, nil))
 	}
 }

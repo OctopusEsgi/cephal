@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	initconf "cephal/utils/config"
+	"cephal/utils/portmanager"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -16,11 +17,9 @@ import (
 
 // Paramètre nécessaire pour créer un conteneur
 type ServerInfo struct {
-	Game     string   `json:"game"`
-	Alias    string   `json:"alias"`
-	Env      []string `json:"env"`
-	PortsTCP []string `json:"portsTCP"` // Liste des ports TCP externes
-	PortsUDP []string `json:"portsUDP"` // Liste des ports UDP externes
+	Game  string   `json:"game"`
+	Alias string   `json:"alias"`
+	Env   []string `json:"env"`
 }
 
 type ContainerInfo struct {
@@ -41,6 +40,37 @@ func getGameImageConfig(game string, confCephalIMG []initconf.GameImage) (*initc
 	return nil, fmt.Errorf("image de jeux non définie: %s", game)
 }
 
+func getGamePorts(game string, confCephal *initconf.ConfigCephal) ([]string, []string) {
+	var gameImage *initconf.GameImage
+
+	// Rechercher la configuration pour le jeu spécifié
+	for _, gi := range confCephal.GameImages {
+		if gi.Nom == game {
+			gameImage = &gi
+			break
+		}
+	}
+
+	// Si le jeu n'est pas trouvé, retourner une erreur ou des valeurs par défaut
+	if gameImage == nil {
+		fmt.Println("Jeu non trouvé dans la configuration")
+		return nil, nil
+	}
+
+	// Extraire le nombre de ports TCP et UDP requis de la configuration
+	numTCPPorts := len(gameImage.Ports.TCP)
+	numUDPPorts := len(gameImage.Ports.UDP)
+
+	// Assigner les ports en fonction des nombres spécifiés
+	tcpPorts, udpPorts, err := portmanager.AssignPorts(numTCPPorts, numUDPPorts, confCephal)
+	if err != nil {
+		fmt.Println("Erreur lors de l'assignation des ports:", err)
+		return nil, nil
+	}
+
+	return tcpPorts, udpPorts
+}
+
 func createServer(srvInfo ServerInfo, confCephal *initconf.ConfigCephal) (*container.CreateResponse, error) {
 
 	gameConfig, err := getGameImageConfig(srvInfo.Game, confCephal.GameImages)
@@ -48,14 +78,16 @@ func createServer(srvInfo ServerInfo, confCephal *initconf.ConfigCephal) (*conta
 		return nil, err
 	}
 
+	tcpPorts, udpPorts := getGamePorts(srvInfo.Game, confCephal)
+
 	exposedPorts := nat.PortSet{}
 	portBindings := nat.PortMap{}
 
 	// Lier les ports TCP
-	if len(srvInfo.PortsTCP) != len(gameConfig.Ports.TCP) {
+	if len(tcpPorts) != len(gameConfig.Ports.TCP) {
 		return nil, fmt.Errorf("mismatch in the number of TCP ports")
 	}
-	for i, externalPort := range srvInfo.PortsTCP {
+	for i, externalPort := range tcpPorts {
 		internalPort, err := nat.NewPort("tcp", gameConfig.Ports.TCP[i])
 		if err != nil {
 			return nil, err
@@ -70,10 +102,10 @@ func createServer(srvInfo ServerInfo, confCephal *initconf.ConfigCephal) (*conta
 	}
 
 	// Lier les ports UDP
-	if len(srvInfo.PortsUDP) != len(gameConfig.Ports.UDP) {
+	if len(udpPorts) != len(gameConfig.Ports.UDP) {
 		return nil, fmt.Errorf("mismatch in the number of UDP ports")
 	}
-	for i, externalPort := range srvInfo.PortsUDP {
+	for i, externalPort := range udpPorts {
 		internalPort, err := nat.NewPort("udp", gameConfig.Ports.UDP[i])
 		if err != nil {
 			return nil, err
