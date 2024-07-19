@@ -28,7 +28,7 @@ func extractPort(portString string) string {
 	return strings.TrimSpace(parts[0])
 }
 
-// FindAndPrintPort trouve et imprime les ports, divisés en TCP et UDP
+// FindAndPrintPort trouve et renvoiee les ports, divisés en TCP et UDP
 func FindUsedPort() ([]string, []string) {
 	body, err := containers.GetContainers()
 	if err != nil {
@@ -75,26 +75,44 @@ func isPortUsed(port string, usedPorts []string) bool {
 	return false
 }
 
-func AssignPorts(nbtcp, nbudp int, confCephal *config.ConfigCephal) (tcpPorts []string, udpPorts []string, err error) {
+func contains(ports []string, port string) bool {
+	for _, p := range ports {
+		if p == port {
+			return true
+		}
+	}
+	return false
+}
+
+func AssignPorts(nbtcp int, nbudp int, confCephal *config.ConfigCephal) (tcpPorts []string, udpPorts []string, err error) {
 	usedTcpPorts, usedUdpPorts := FindUsedPort()
 	portRange := confCephal.Global.Portrange
 
 	tcpPorts = make([]string, 0, nbtcp)
 	udpPorts = make([]string, 0, nbudp)
 
-	for port := portRange.Min; port <= portRange.Max && len(tcpPorts) < nbtcp; port++ {
+	// Assign pairs first
+	for port := portRange.Min; port <= portRange.Max && (len(tcpPorts) < nbtcp || len(udpPorts) < nbudp); port++ {
 		portStr := fmt.Sprintf("%d", port)
-		if !isPortUsed(portStr, usedTcpPorts) {
-			tcpPorts = append(tcpPorts, portStr)
+		if !isPortUsed(portStr, usedTcpPorts) && !isPortUsed(portStr, usedUdpPorts) {
+			if len(tcpPorts) < nbtcp {
+				tcpPorts = append(tcpPorts, portStr)
+			}
+			if len(udpPorts) < nbudp {
+				udpPorts = append(udpPorts, portStr)
+			}
 		}
 	}
 
+	// Boucles d'assignation dynamique
+	// si on as 25004/tcp et 25005/udp de pris le prochain serveur qui veut un couple tcp/udp prendra 25006/tcp/udp et non 25005/tcp et 25006/udp :)
 	for port := portRange.Min; port <= portRange.Max && len(udpPorts) < nbudp; port++ {
 		portStr := fmt.Sprintf("%d", port)
-		if !isPortUsed(portStr, usedUdpPorts) {
+		if !isPortUsed(portStr, usedUdpPorts) && !contains(udpPorts, portStr) {
 			udpPorts = append(udpPorts, portStr)
 		}
 	}
+
 	if len(tcpPorts) < nbtcp {
 		err = fmt.Errorf("impossible d'assigner %d ports TCP, seuls %d disponibles", nbtcp, len(tcpPorts))
 	}
