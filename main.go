@@ -65,7 +65,7 @@ func main() {
 	http.HandleFunc("/api/services", services.ServicesAPIHandler)
 	http.HandleFunc("/api/createserver", gameserver.CreateServerAPIHandler(configCephal))
 	http.HandleFunc("/api/deleteserver", gameserver.DeleteServerAPIHandler)
-	http.HandleFunc("/api/getfreeports", apiPort.PortsAPIHandler)
+	http.HandleFunc("/api/getusedports", apiPort.PortsAPIHandler)
 	http.HandleFunc("/", frontHandler(configCephal))
 	log.Printf("Lancement du serveur sur le port %d", configCephal.Server.Port)
 	// --

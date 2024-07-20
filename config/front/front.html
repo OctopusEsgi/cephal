@@ -38,13 +38,7 @@
 
                 <label for="players">Nombre de Joueurs :</label>
                 <input type="number" id="players" name="players" min="1" max="100" required>
-                                
-                <label for="portTCP">Port TCP :</label>
-                <input type="text" id="portTCP" name="portTCP" required>
-                
-                <label for="portUDP">Port UDP :</label>
-                <input type="text" id="portUDP" name="portUDP" required>
-                
+
                 <button type="submit">Démarrer le Jeu</button>
             </form>
         </div>
@@ -170,7 +164,7 @@
         async function deleteContainer(containerId) {
             const stopOptions = {
                 Signal: "SIGTERM",
-                Timeout: 0 // Vous pouvez ajuster le délai d'attente
+                Timeout: 0
             };
             
             const removeOptions = {
@@ -208,7 +202,7 @@
 
             setTimeout(() => {
                 toast.classList.remove('show');
-            }, 3000); // Disparaît après 3 secondes (3000 ms)
+            }, 3000); // Disparaît après 3 secondes
         }
 
         document.getElementById('game-form').addEventListener('submit', async function(event) {
@@ -219,15 +213,11 @@
             const map = document.getElementById('map').value;
             const mode = document.getElementById('mode').value;
             const players = document.getElementById('players').value;
-            const portsTCP = document.getElementById('portTCP').value;
-            const portsUDP = document.getElementById('portUDP').value;
 
             const body = JSON.stringify({
                 game: server,
                 alias: alias,
                 env: [`VERSION=v146`, `MAP=${map}`, `MODE=${mode}`, `PLAYERSLIMIT=${players}`],
-                portsTCP: [portsTCP],
-                portsUDP: [portsUDP] 
             });
 
             const response = await fetch('/api/createserver', {
