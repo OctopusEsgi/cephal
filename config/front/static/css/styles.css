@@ -50,7 +50,7 @@ label {
     margin: 10px 0 5px;
 }
 
-select, input[type="number"], input[type="text"] {
+select, input[type="number"], input[type="text"], input[type="password"] {
     width: calc(100% - 22px);
     padding: 10px;
     margin: 10px 0;

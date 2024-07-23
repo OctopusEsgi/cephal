@@ -11,6 +11,10 @@
     <img src="/static/images/Poulpe_Yanis4_logo.png" alt="Le logo de cephal" class="logo">
     <div class="wrapper">
         <div class="left-pane">
+            <h2>Configuration</h2>
+            <label for="api-key">Clé API :</label>
+            <input type="password"  id="api-key" placeholder="Entrez votre clé API" required>
+
             <h2>Démarrer un serveur de jeu</h2>
             <form id="game-form">
                 <label for="server">Image :</label>
@@ -23,16 +27,30 @@
                 
                 <label for="map">Carte :</label>
                 <select id="map" name="map" required>
-                    <option value="Acient_Caldera">Acient Caldera</option>
+                    <option value="Ancient_Caldera">Ancient Caldera</option>
                     <option value="Archipelago">Archipelago</option>
+                    <option value="Debris_Field">Debris Field</option>
+                    <option value="Domain">Domain</option>
+                    <option value="Fork">Fork</option>
+                    <option value="Fortress">Fortress</option>
+                    <option value="Islands">Islands</option>
+                    <option value="Labyrinth">Labyrinth</option>
+                    <option value="Maze">Maze</option>
+                    <option value="Molten_Lake">Molten Lake</option>
+                    <option value="Mud_Flats">Mud Flats</option>
+                    <option value="Shattered">Shattered</option>
                     <option value="Tendrils">Tendrils</option>
+                    <option value="Triad">Triad</option>
+                    <option value="Wasteland">Wasteland</option>
                     <option value="Glacier">Glacier</option>
+                    <option value="Passage">Passage</option>
+                    <option value="Veins">Veins</option>
                 </select>
                 
                 <label for="mode">Mode de Jeu :</label>
                 <select id="mode" name="mode" required>
-                    <option value="pvp">PvP</option>
                     <option value="sandbox">Sandbox</option>
+                    <option value="pvp">PvP</option>
                     <option value="survival">Survival</option>
                     <option value="attack">Attack</option>
                 </select>
@@ -45,6 +63,7 @@
         </div>
 
         <div class="separator"></div>
+        
         <div class="toast" id="toast">Action de suppression effectuée avec succès.</div>
         <div class="right-pane">
             <h2>État des Conteneurs Docker</h2>
@@ -86,8 +105,16 @@
     
 
     <script>
+        function getApiKey() {
+            return document.getElementById('api-key').value;
+        }
+
         async function fetchContainers() {
-            const response = await fetch('/api/containers');
+            const response = await fetch('/api/containers', {
+                headers: {
+                    'Authorization': 'Bearer ' + getApiKey()
+                }
+            });
             const containers = await response.json();
 
             const tableBody = document.getElementById('container-table-body');
@@ -122,7 +149,7 @@
             
                 const actionCell = document.createElement('td');
                 const deleteButton = document.createElement('button');
-                deleteButton.textContent = '☓'; // <----------------------------- ICONE DELETE 🪓💣
+                deleteButton.textContent = '☓';
                 deleteButton.classList.add('delete-button'); 
                 deleteButton.onclick = () => deleteContainer(container.id);
                 actionCell.appendChild(deleteButton);
@@ -133,7 +160,11 @@
         }
 
         async function fetchNodes() {
-            const response = await fetch('/api/nodes');
+            const response = await fetch('/api/nodes', {
+                headers: {
+                    'Authorization': 'Bearer ' + getApiKey()
+                }
+            });
             const nodes = await response.json();
 
             const tableBody = document.getElementById('node-table-body');
@@ -183,16 +214,15 @@
             const response = await fetch('/api/deleteserver', {
                 method: 'DELETE',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + getApiKey()
                 },
                 body: body
             });
 
             const result = await response.json();
             console.log(result);
-            //showPopup();
             showToast("Action de suppression effectuée avec succès.");
-            // Actualiser les conteneurs après la suppression
             fetchContainers();
         }
 
@@ -203,7 +233,7 @@
 
             setTimeout(() => {
                 toast.classList.remove('show');
-            }, 3000); // Disparaît après 3 secondes
+            }, 3000);
         }
 
         document.getElementById('game-form').addEventListener('submit', async function(event) {
@@ -224,7 +254,8 @@
             const response = await fetch('/api/createserver', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + getApiKey()
                 },
                 body: body
             });
@@ -232,7 +263,6 @@
             const result = await response.json();
             console.log(result);
 
-            // Optionally, refresh containers and nodes to see the new server
             fetchContainers();
             fetchNodes();
         });
