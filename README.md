@@ -32,10 +32,10 @@ Pour l'instant seul le jeu [Mindustry](https://mindustrygame.github.io/) est dis
 
 ## Exemple d'utilisation de l'API
 
-**Créer un serveur de jeux**
+**Créer un serveur de je ux**
 
 ```bash
-curl --location 'http://10.255.0.13:8080/api/createserver' \
+curl --location 'http://localhost:8080/api/createserver' \
 --header 'Content-Type: application/json' \
 --data '{
     "game": "mindustryesgi",
