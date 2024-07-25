@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cephal/api/apiterraform"
 	"cephal/api/containers"
 	"cephal/api/gameserver"
 	"cephal/api/nodes"
@@ -56,6 +57,11 @@ func main() {
 		log.Fatal(err)
 	}
 	// --fe
+	// output, err := terraforminit.InitTerraform()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Println(output)
 	//
 	//
 	// FRONT
@@ -67,6 +73,7 @@ func main() {
 	http.Handle("/api/createserver", auth.JWTMiddleware(http.HandlerFunc(gameserver.CreateServerAPIHandler(configCephal))))
 	http.Handle("/api/deleteserver", auth.JWTMiddleware(http.HandlerFunc(gameserver.DeleteServerAPIHandler)))
 	http.Handle("/api/getusedports", auth.JWTMiddleware(http.HandlerFunc(apiPort.PortsAPIHandler)))
+	http.Handle("/api/createnodes", auth.JWTMiddleware(http.HandlerFunc(apiterraform.NodesTerraform)))
 	http.HandleFunc("/", frontHandler(configCephal))
 	log.Printf("Lancement du serveur sur le port %d", configCephal.Server.Port)
 	// --

@@ -100,6 +100,10 @@
                     <!-- Les lignes seront remplies par JavaScript -->
                 </tbody>
             </table>
+            <h2>Gestion des Nœuds (OctopusNode)</h2>
+            <button class="terraform" onclick="postTerraform('init')">init</button>
+            <button class="terraform" onclick="postTerraform('apply')">apply</button>
+            <button class="terraform" onclick="postTerraform('destroy')">destroy</button>
         </div>
     </div>
     
@@ -266,6 +270,34 @@
             fetchContainers();
             fetchNodes();
         });
+
+
+        async function postTerraform(action) {
+           try {
+               // Construire le corps de la requête en fonction de l'action demandée
+               const body = JSON.stringify({ action: action });
+            
+               // Envoyer la requête POST à l'API /api/createnodes
+               const response = await fetch('/api/createnodes', {
+                   method: 'POST',
+                   headers: {
+                       'Content-Type': 'application/json',
+                       'Authorization': 'Bearer ' + getApiKey()
+                   },
+                   body: body
+               });
+           
+               // Analyser la réponse JSON
+               const result = await response.json();
+               console.log(result);
+           
+               // Appeler d'autres fonctions si nécessaire après la requête
+               fetchContainers();
+               fetchNodes();
+           } catch (error) {
+               console.error('Error:', error);
+           }
+        }
 
         window.onload = function() {
             fetchContainers();
